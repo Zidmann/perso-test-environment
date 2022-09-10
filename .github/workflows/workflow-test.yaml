@@ -26,6 +26,11 @@ jobs:
         run: |
           GITHUB_SHORTSHA=${GITHUB_SHA:0:7}
           GITHUB_BRANCH=${GITHUB_REF##*/}
+          echo GITHUB_SHA=$GITHUB_SHA
+          echo GITHUB_SHORTSHA=$GITHUB_SHORTSHA
+          echo GITHUB_REF=$GITHUB_REF
+          echo GITHUB_BRANCH=$GITHUB_BRANCH
+
           if [ "$GITHUB_BRANCH" == "main" ]
           then
             echo "::set-output name=environment::production"
@@ -41,9 +46,9 @@ jobs:
           fi
           echo "::set-output name=sha7::$GITHUB_SHORTSHA"
           echo "::set-output name=threads::8"
-      - name: Print values
+      - name: Show output values
         id: print
         run: |
-          echo "environment=${{ steps.param.outputs.artifactname }}"
+          echo "environment=${{ steps.param.outputs.environment }}"
           echo "sha7=${{ steps.param.outputs.sha7 }}"
           echo "threads=${{ steps.param.outputs.threads }}"
