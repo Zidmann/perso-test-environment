@@ -62,5 +62,6 @@ jobs:
       - name: Simple echo
         id: echo
         run: |
-          echo 42
           echo environment=${{ needs.init.outputs.environment }}
+          echo GLOBAL_SECRET=${{ secrets.GLOBAL_SECRET }}
+          echo LOCAL_SECRET=${{ secrets.LOCAL_SECRET }}
