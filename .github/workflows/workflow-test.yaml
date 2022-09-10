@@ -57,7 +57,7 @@ jobs:
     name: Environment job
     needs: [init]
     runs-on: ubuntu-latest
-    environment: ${{ fromJson(needs.init.output.environment) }}
+    environment: ${{ needs.init.output.environment }}
     steps:
       - name: Simple echo
         id: echo
