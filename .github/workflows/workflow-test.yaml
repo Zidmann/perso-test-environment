@@ -62,7 +62,7 @@ jobs:
     runs-on: ubuntu-latest
     environment: ${{ needs.init.outputs.environment }}
     strategy:
-      max-parallel: 1
+      max-parallel: 2
       matrix:
         content: ${{ fromJson(needs.init.outputs.list) }}
     steps:
