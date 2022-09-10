@@ -13,9 +13,9 @@ jobs:
   init:
     name:
     runs-on: ubuntu-latest
-    outputs: ${{ steps.param.outputs.artifactname }}
-      environment: ${{ steps.param.outputs.artifactname }}
-      sha7: ${{ steps.param.outputs.artifactname }}
+    outputs:
+      environment: ${{ steps.param.outputs.environment }}
+      sha7: ${{ steps.param.outputs.sha7 }}
       threads: ${{ steps.param.outputs.threads }}
     steps:
       - name: Define environment
@@ -46,4 +46,4 @@ jobs:
         run: |
           echo "environment=${{ steps.param.outputs.artifactname }}"
           echo "sha7=${{ steps.param.outputs.sha7 }}"
-          echo "threads${{ steps.param.outputs.threads }}="
+          echo "threads=${{ steps.param.outputs.threads }}"
