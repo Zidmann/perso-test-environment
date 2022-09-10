@@ -1,0 +1,49 @@
+name: terraform-worfklow
+
+on:
+  push:
+    branches:
+    - main
+    - staging
+    - develop
+    paths:
+    - '**'
+
+jobs:
+  init:
+    name:
+    runs-on: ubuntu-latest
+    outputs: ${{ steps.param.outputs.artifactname }}
+      environment: ${{ steps.param.outputs.artifactname }}
+      sha7: ${{ steps.param.outputs.artifactname }}
+      threads: ${{ steps.param.outputs.threads }}
+    steps:
+      - name: Define environment
+        id: param
+        env:
+          GITHUB_REF: ${{ github.ref }} 
+          GITHUB_SHA: ${{ github.sha }}
+        run: |
+          GITHUB_SHORTSHA=${GITHUB_SHA:0:7}
+          GITHUB_BRANCH=${GITHUB_REF##*/}
+          if [ "$GITHUB_BRANCH" == "main" ]
+          then
+            echo "::set-output name=environment::production"
+          elif [ "$GITHUB_BRANCH" == "staging" ]
+          then
+            echo "::set-output name=environment::testing"
+          elif [ "$GITHUB_BRANCH" == "develop" ]
+          then
+            echo "::set-output name=environment::development"
+          else
+            echo "[-] Error unaccepted branch name"
+            exit 1
+          fi
+          echo "::set-output name=sha7::$GITHUB_SHORTSHA"
+          echo "::set-output name=threads::8"
+      - name: Print values
+        id: print
+        run: |
+          echo "environment=${{ steps.param.outputs.artifactname }}"
+          echo "sha7=${{ steps.param.outputs.sha7 }}"
+          echo "threads${{ steps.param.outputs.threads }}="
