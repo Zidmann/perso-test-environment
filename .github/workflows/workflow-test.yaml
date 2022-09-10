@@ -63,3 +63,4 @@ jobs:
         id: echo
         run: |
           echo 42
+          echo environment=${{ needs.init.output.environment }}
