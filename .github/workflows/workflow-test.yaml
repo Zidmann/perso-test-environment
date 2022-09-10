@@ -11,7 +11,7 @@ on:
 
 jobs:
   init:
-    name:
+    name: Initialization
     runs-on: ubuntu-latest
     outputs:
       environment: ${{ steps.param.outputs.environment }}
@@ -52,3 +52,14 @@ jobs:
           echo "environment=${{ steps.param.outputs.environment }}"
           echo "sha7=${{ steps.param.outputs.sha7 }}"
           echo "threads=${{ steps.param.outputs.threads }}"
+
+  env-job:
+    name: Environment job
+    needs: [init]
+    runs-on: ubuntu-latest
+    environment: ${{ fromJson(needs.init.output.environment) }}
+    steps:
+      - name: Simple echo
+        id: echo
+        run: |
+          echo 42
