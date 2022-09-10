@@ -14,12 +14,14 @@ jobs:
     name: Initialization
     runs-on: ubuntu-latest
     outputs:
-      environment: ${{ steps.param.outputs.environment }}
       sha7: ${{ steps.param.outputs.sha7 }}
       threads: ${{ steps.param.outputs.threads }}
       list: ${{ steps.param.outputs.list }}
+      execute_check: ${{ steps.param.outputs.execute_check }}
+      execute_test: ${{ steps.param.outputs.execute_test }}
+      execute_deploy: ${{ steps.param.outputs.execute_deploy }}
     steps:
-      - name: Define environment
+      - name: Define settings
         id: param
         env:
           GITHUB_REF: ${{ github.ref }} 
@@ -34,13 +36,19 @@ jobs:
 
           if [ "$GITHUB_BRANCH" == "main" ]
           then
-            echo "::set-output name=environment::production"
+            echo "::set-output name=execute_check::1"
+            echo "::set-output name=execute_test::1"
+            echo "::set-output name=execute_deploy::1"
           elif [ "$GITHUB_BRANCH" == "staging" ]
           then
-            echo "::set-output name=environment::testing"
+            echo "::set-output name=execute_check::1"
+            echo "::set-output name=execute_test::1"
+            echo "::set-output name=execute_deploy::0"
           elif [ "$GITHUB_BRANCH" == "develop" ]
           then
-            echo "::set-output name=environment::development"
+            echo "::set-output name=execute_check::1"
+            echo "::set-output name=execute_test::0"
+            echo "::set-output name=execute_deploy::0"
           else
             echo "[-] Error unaccepted branch name"
             exit 1
@@ -51,39 +59,20 @@ jobs:
       - name: Show output values
         id: print
         run: |
-          echo "environment=${{ steps.param.outputs.environment }}"
           echo "sha7=${{ steps.param.outputs.sha7 }}"
           echo "threads=${{ steps.param.outputs.threads }}"
           echo "list=${{ secrets.GLOBAL_LIST }}"
           echo "GLOBAL_SECRET=${{ secrets.GLOBAL_SECRET }}"
+          echo "execute_check=${{ steps.param.outputs.execute_check }}"
+          echo "execute_test=${{ steps.param.outputs.execute_test }}"
+          echo "execute_deploy=${{ steps.param.outputs.execute_deploy }}"
 
-  env-job:
-    name: Environment job
+  dev-check:
+    name: Check repertories
     needs: [init]
     runs-on: ubuntu-latest
-    environment: ${{ needs.init.outputs.environment }}
-    steps:
-      - name: Simple echo
-        id: echo
-        run: |
-          echo 42
-
-  env-job2:
-    name: Environment job 2
-    needs: [init, env-job]
-    runs-on: ubuntu-latest
-    environment: ${{ needs.init.outputs.environment }}
-    steps:
-      - name: Simple echo
-        id: echo
-        run: |
-          echo 43
-
-  env-job-loop:
-    name: Environment job loop
-    needs: [init, env-job2]
-    runs-on: ubuntu-latest
-    environment: ${{ needs.init.outputs.environment }}
+    if: ${{ needs.init.outputs.execute_check }} == 1
+    environment: development
     strategy:
       max-parallel: 2
       matrix:
@@ -92,7 +81,34 @@ jobs:
       - name: Simple echo
         id: echo
         run: |
-          echo environment=${{ needs.init.outputs.environment }}
+          echo GLOBAL_SECRET=${{ secrets.GLOBAL_SECRET }}
+          echo LOCAL_SECRET=${{ secrets.LOCAL_SECRET }}
+          echo value=${{ matrix.content }}
+
+  test-stagging:
+    name: Check repertories
+    needs: [init, dev-check]
+    runs-on: ubuntu-latest
+    if: ${{ needs.init.outputs.execute_test }} == 1
+    environment: stagging
+    steps:
+      - name: Simple echo
+        id: echo
+        run: |
+          echo GLOBAL_SECRET=${{ secrets.GLOBAL_SECRET }}
+          echo LOCAL_SECRET=${{ secrets.LOCAL_SECRET }}
+          echo value=${{ matrix.content }}
+
+  deploy-production:
+    name: Check repertories
+    needs: [init, test-stagging]
+    runs-on: ubuntu-latest
+    if: ${{ needs.init.outputs.execute_deploy }} == 1
+    environment: production
+    steps:
+      - name: Simple echo
+        id: echo
+        run: |
           echo GLOBAL_SECRET=${{ secrets.GLOBAL_SECRET }}
           echo LOCAL_SECRET=${{ secrets.LOCAL_SECRET }}
           echo value=${{ matrix.content }}
