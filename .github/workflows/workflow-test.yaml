@@ -55,6 +55,7 @@ jobs:
           echo "sha7=${{ steps.param.outputs.sha7 }}"
           echo "threads=${{ steps.param.outputs.threads }}"
           echo "list=${{ secrets.GLOBAL_LIST }}"
+          echo "GLOBAL_SECRET=${{ secrets.GLOBAL_SECRET }}"
 
   env-job:
     name: Environment job
