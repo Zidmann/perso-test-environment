@@ -62,6 +62,28 @@ jobs:
     needs: [init]
     runs-on: ubuntu-latest
     environment: ${{ needs.init.outputs.environment }}
+    steps:
+      - name: Simple echo
+        id: echo
+        run: |
+          echo 42
+
+  env-job2:
+    name: Environment job
+    needs: [env-job]
+    runs-on: ubuntu-latest
+    environment: ${{ needs.init.outputs.environment }}
+    steps:
+      - name: Simple echo
+        id: echo
+        run: |
+          echo 43
+
+  env-job-loop:
+    name: Environment job loop
+    needs: [env-job2]
+    runs-on: ubuntu-latest
+    environment: ${{ needs.init.outputs.environment }}
     strategy:
       max-parallel: 2
       matrix:
