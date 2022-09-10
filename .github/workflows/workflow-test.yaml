@@ -17,7 +17,7 @@ jobs:
       environment: ${{ steps.param.outputs.environment }}
       sha7: ${{ steps.param.outputs.sha7 }}
       threads: ${{ steps.param.outputs.threads }}
-      list: ${{ secrets.GLOBAL_LIST }}
+      list: ${{ steps.param.outputs.list }}
     steps:
       - name: Define environment
         id: param
@@ -47,12 +47,14 @@ jobs:
           fi
           echo "::set-output name=sha7::$GITHUB_SHORTSHA"
           echo "::set-output name=threads::8"
+          echo "::set-output name=list::${{ secrets.GLOBAL_LIST }}"
       - name: Show output values
         id: print
         run: |
           echo "environment=${{ steps.param.outputs.environment }}"
           echo "sha7=${{ steps.param.outputs.sha7 }}"
           echo "threads=${{ steps.param.outputs.threads }}"
+          echo "list=${{ secrets.GLOBAL_LIST }}"
 
   env-job:
     name: Environment job
