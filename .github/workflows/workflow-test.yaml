@@ -69,8 +69,8 @@ jobs:
           echo 42
 
   env-job2:
-    name: Environment job
-    needs: [env-job]
+    name: Environment job 2
+    needs: [init, env-job]
     runs-on: ubuntu-latest
     environment: ${{ needs.init.outputs.environment }}
     steps:
