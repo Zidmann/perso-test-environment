@@ -1,0 +1,114 @@
+name: terraform-worfklow
+
+on:
+  push:
+    branches:
+    - main
+    - staging
+    - develop
+    paths:
+    - '**'
+
+jobs:
+  init:
+    name: Initialization
+    runs-on: ubuntu-latest
+    outputs:
+      sha7: ${{ steps.param.outputs.sha7 }}
+      threads: ${{ steps.param.outputs.threads }}
+      list: ${{ steps.param.outputs.list }}
+      execute_check: ${{ steps.param.outputs.execute_check }}
+      execute_test: ${{ steps.param.outputs.execute_test }}
+      execute_deploy: ${{ steps.param.outputs.execute_deploy }}
+    steps:
+      - name: Define settings
+        id: param
+        env:
+          GITHUB_REF: ${{ github.ref }} 
+          GITHUB_SHA: ${{ github.sha }}
+        run: |
+          GITHUB_SHORTSHA=${GITHUB_SHA:0:7}
+          GITHUB_BRANCH=${GITHUB_REF##*/}
+          echo GITHUB_SHA=$GITHUB_SHA
+          echo GITHUB_SHORTSHA=$GITHUB_SHORTSHA
+          echo GITHUB_REF=$GITHUB_REF
+          echo GITHUB_BRANCH=$GITHUB_BRANCH
+
+          if [ "$GITHUB_BRANCH" == "main" ]
+          then
+            echo "::set-output name=execute_check::1"
+            echo "::set-output name=execute_test::1"
+            echo "::set-output name=execute_deploy::1"
+          elif [ "$GITHUB_BRANCH" == "staging" ]
+          then
+            echo "::set-output name=execute_check::1"
+            echo "::set-output name=execute_test::1"
+            echo "::set-output name=execute_deploy::0"
+          elif [ "$GITHUB_BRANCH" == "develop" ]
+          then
+            echo "::set-output name=execute_check::1"
+            echo "::set-output name=execute_test::0"
+            echo "::set-output name=execute_deploy::0"
+          else
+            echo "[-] Error unaccepted branch name"
+            exit 1
+          fi
+          echo "::set-output name=sha7::$GITHUB_SHORTSHA"
+          echo "::set-output name=threads::8"
+          echo "::set-output name=list::${{ secrets.GLOBAL_LIST }}"
+      - name: Show output values
+        id: print
+        run: |
+          echo "sha7=${{ steps.param.outputs.sha7 }}"
+          echo "threads=${{ steps.param.outputs.threads }}"
+          echo "list=${{ secrets.GLOBAL_LIST }}"
+          echo "GLOBAL_SECRET=${{ secrets.GLOBAL_SECRET }}"
+          echo "execute_check=${{ steps.param.outputs.execute_check }}"
+          echo "execute_test=${{ steps.param.outputs.execute_test }}"
+          echo "execute_deploy=${{ steps.param.outputs.execute_deploy }}"
+
+  dev-check:
+    name: Check repertories
+    needs: [init]
+    runs-on: ubuntu-latest
+    if: needs.init.outputs.execute_check == '1'
+#    environment: development
+    strategy:
+      max-parallel: 2
+      matrix:
+        content: ${{ fromJson(needs.init.outputs.list) }}
+    steps:
+      - name: Simple echo
+        id: echo
+        run: |
+          echo GLOBAL_SECRET=${{ secrets.GLOBAL_SECRET }}
+          echo LOCAL_SECRET=${{ secrets.LOCAL_SECRET }}
+          echo value=${{ matrix.content }}
+
+  test-stagging:
+    name: Test on stagging
+    needs: [init, dev-check]
+    runs-on: ubuntu-latest
+    if: needs.init.outputs.execute_test == '1'
+#    environment: testing
+    steps:
+      - name: Simple echo
+        id: echo
+        run: |
+          echo GLOBAL_SECRET=${{ secrets.GLOBAL_SECRET }}
+          echo LOCAL_SECRET=${{ secrets.LOCAL_SECRET }}
+          echo value=${{ matrix.content }}
+
+  deploy-production:
+    name: Deploy on production
+    needs: [init, test-stagging]
+    runs-on: ubuntu-latest
+    if: needs.init.outputs.execute_deploy == '1'
+#    environment: production
+    steps:
+      - name: Simple echo
+        id: echo
+        run: |
+          echo GLOBAL_SECRET=${{ secrets.GLOBAL_SECRET }}
+          echo LOCAL_SECRET=${{ secrets.LOCAL_SECRET }}
+          echo value=${{ matrix.content }}
