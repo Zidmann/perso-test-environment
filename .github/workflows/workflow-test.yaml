@@ -86,11 +86,11 @@ jobs:
           echo value=${{ matrix.content }}
 
   test-stagging:
-    name: Check repertories
+    name: Test on stagging
     needs: [init, dev-check]
     runs-on: ubuntu-latest
     if: ${{ needs.init.outputs.execute_test }} == 1
-    environment: stagging
+    environment: testing
     steps:
       - name: Simple echo
         id: echo
@@ -100,7 +100,7 @@ jobs:
           echo value=${{ matrix.content }}
 
   deploy-production:
-    name: Check repertories
+    name: Deploy on production
     needs: [init, test-stagging]
     runs-on: ubuntu-latest
     if: ${{ needs.init.outputs.execute_deploy }} == 1
