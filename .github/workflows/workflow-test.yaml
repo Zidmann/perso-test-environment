@@ -62,7 +62,7 @@ jobs:
     strategy:
       max-parallel: 1
       matrix:
-        content: ${{ needs.init.outputs.list }}
+        content: ${{ fromJson(needs.init.outputs.list) }}
     steps:
       - name: Simple echo
         id: echo
