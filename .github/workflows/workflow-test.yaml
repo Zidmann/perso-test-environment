@@ -17,6 +17,7 @@ jobs:
       environment: ${{ steps.param.outputs.environment }}
       sha7: ${{ steps.param.outputs.sha7 }}
       threads: ${{ steps.param.outputs.threads }}
+      list: ${{ secrets.GLOBAL_LIST }}
     steps:
       - name: Define environment
         id: param
@@ -61,7 +62,7 @@ jobs:
     strategy:
       max-parallel: 1
       matrix:
-        content: ${{ fromJson(secrets.GLOBAL_LIST) }}
+        content: ${{ needs.init.outputs.list }}
     steps:
       - name: Simple echo
         id: echo
