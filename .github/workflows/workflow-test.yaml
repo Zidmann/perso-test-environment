@@ -58,6 +58,10 @@ jobs:
     needs: [init]
     runs-on: ubuntu-latest
     environment: ${{ needs.init.outputs.environment }}
+    strategy:
+      max-parallel: 1
+      matrix:
+        content: ${{ fromJson(secrets.GLOBAL_LIST) }}
     steps:
       - name: Simple echo
         id: echo
@@ -65,3 +69,4 @@ jobs:
           echo environment=${{ needs.init.outputs.environment }}
           echo GLOBAL_SECRET=${{ secrets.GLOBAL_SECRET }}
           echo LOCAL_SECRET=${{ secrets.LOCAL_SECRET }}
+          echo value=${{ matrix.content }}
