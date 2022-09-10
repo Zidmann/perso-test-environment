@@ -81,7 +81,7 @@ jobs:
 
   env-job-loop:
     name: Environment job loop
-    needs: [env-job2]
+    needs: [init, env-job2]
     runs-on: ubuntu-latest
     environment: ${{ needs.init.outputs.environment }}
     strategy:
