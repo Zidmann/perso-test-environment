@@ -57,10 +57,10 @@ jobs:
     name: Environment job
     needs: [init]
     runs-on: ubuntu-latest
-    environment: ${{ needs.init.output.environment }}
+    environment: ${{ needs.init.outputs.environment }}
     steps:
       - name: Simple echo
         id: echo
         run: |
           echo 42
-          echo environment=${{ needs.init.output.environment }}
+          echo environment=${{ needs.init.outputs.environment }}
