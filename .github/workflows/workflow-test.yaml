@@ -123,8 +123,8 @@ jobs:
           key: ${{ steps.params.outputs.cache_key }}
 
 
-      # Create the temporary branch
-      - name: Create temporary branch
+      # Create the working branch
+      - name: Create working branch
         id: tmpbranch
         run: |
           cd sources/
@@ -207,6 +207,35 @@ jobs:
       - name: Remove Terraform working space and the credentials
         id: clean
         run: rm -vrf .terraform/
+
+      # Commit the changes and push them
+      - name: Commit changes
+        id: commit
+        run: |
+          if [ "$(git status --porcelain)" != "" ]
+          then
+              echo "[i] Changes to commit"
+              git status --porcelain 2>/dev/null
+              git remote add originssh git@github.com:${{ github.repository }}.git
+              git config --global user.email "github-robot@github.com[noreply]"
+              git config --global user.name "GitHub Robot"
+              git config pull.rebase true
+              git checkout ${{ needs.init.outputs.branch_name }}
+              git commit -a -m "Change in ${{ matrix.directory }} directory"
+
+              while true
+              do
+                  echo -e "\n[i] Pull all the changes from the different jobs"
+                  git pull originssh ${{ needs.init.outputs.branch_name }}
+
+                  echo -e "\n[i] Attempt to push the changes"
+                  git push originssh ${{ needs.init.outputs.branch_name }} && break
+
+                  echo -e "\n[-] Commit failed - new attempt in 5 seconds"
+              done
+          else
+              echo "[i] Nothing to commit"
+          fi
 
   dev-pull-request:
     name: Commit changes
