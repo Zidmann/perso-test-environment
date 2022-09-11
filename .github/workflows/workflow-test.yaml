@@ -16,6 +16,7 @@ jobs:
     outputs:
       sha7: ${{ steps.params.outputs.sha7 }}
       work_depth: ${{ steps.params.outputs.work_depth }}
+      branch_name: ${{ steps.params.outputs.branch_name }}
       dev_directories: ${{ steps.params.outputs.dev_directories }}
       test_directories: ${{ steps.params.outputs.test_directories }}
       prod_directories: ${{ steps.params.outputs.prod_directories }}
@@ -74,6 +75,8 @@ jobs:
           fi
           echo "::set-output name=work_depth::${WORK_DEPTH}"
 
+          # Define the temporary branch
+          echo "::set-output name=branch_name::tf-workflow-$GITHUB_SHORTSHA"
 
           # Development working directories
           if [ "$TF_DEV_DIRECTORIES" == "" ]
@@ -105,6 +108,7 @@ jobs:
         run: |
           echo "sha7=${{ steps.params.outputs.sha7 }}"
           echo "work_depth=${{ steps.params.outputs.work_depth }}"
+          echo "branch_name=${{ steps.params.outputs.branch_name }}"
           echo "dev_directories=${{ steps.params.outputs.dev_directories }}"
           echo "test_directories=${{ steps.params.outputs.test_directories }}"
           echo "prod_directories=${{ steps.params.outputs.prod_directories }}"
@@ -117,6 +121,15 @@ jobs:
         with:
           path: sources/
           key: ${{ steps.params.outputs.cache_key }}
+
+
+      # Create the temporary branch
+      - name: Create temporary branch
+        id: tmpbranch
+        run: |
+          cd sources/
+          git branch ${{ steps.params.outputs.branch_name }}
+          git push origin ${{ steps.params.outputs.branch_name }}
 
   dev-check:
     name: Check codes
