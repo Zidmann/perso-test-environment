@@ -95,6 +95,7 @@ jobs:
           echo "dev_directories=${{ steps.params.outputs.dev_directories }}"
           echo "test_directories=${{ steps.params.outputs.test_directories }}"
           echo "prod_directories=${{ steps.params.outputs.prod_directories }}"
+          echo "cache_key=${{ steps.params.outputs.cache_key }}"
       - name: Upload cache
         id: cache
         uses: actions/cache@v3
