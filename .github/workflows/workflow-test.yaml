@@ -14,8 +14,8 @@ jobs:
     name: Initialization
     runs-on: ubuntu-latest
     outputs:
-      sha7: ${{ steps.settings.outputs.sha7 }}
-      work_depth: ${{ steps.settings.outputs.work_depth }}
+      sha7: ${{ steps.params.outputs.sha7 }}
+      work_depth: ${{ steps.params.outputs.work_depth }}
       threads: ${{ steps.params.outputs.threads }}
       dev_directories: ${{ steps.params.outputs.dev_directories }}
       test_directories: ${{ steps.params.outputs.test_directories }}
@@ -29,12 +29,15 @@ jobs:
           path: sources/
           submodules: true
 
-      - name: Define settings
+      - name: Define parameters
         id: params
         env:
           GITHUB_SHA: ${{ github.sha }}
           GITHUB_REF: ${{ github.ref }}
         run: |
+          echo "[i] Defining parameters"
+
+          # Global settings
           echo GITHUB_SHA=${GITHUB_SHA}
           GITHUB_SHORTSHA=${GITHUB_SHA:0:7}
           echo GITHUB_SHORTSHA=${GITHUB_SHORTSHA}
@@ -89,8 +92,8 @@ jobs:
       - name: Show output values
         id: print
         run: |
-          echo "sha7=${{ steps.settings.outputs.sha7 }}"
-          echo "work_depth=${{ steps.settings.outputs.work_depth }}"
+          echo "sha7=${{ steps.params.outputs.sha7 }}"
+          echo "work_depth=${{ steps.params.outputs.work_depth }}"
           echo "threads=${{ steps.params.outputs.threads }}"
           echo "dev_directories=${{ steps.params.outputs.dev_directories }}"
           echo "test_directories=${{ steps.params.outputs.test_directories }}"
