@@ -16,7 +16,6 @@ jobs:
     outputs:
       sha7: ${{ steps.params.outputs.sha7 }}
       work_depth: ${{ steps.params.outputs.work_depth }}
-      threads: ${{ steps.params.outputs.threads }}
       dev_directories: ${{ steps.params.outputs.dev_directories }}
       test_directories: ${{ steps.params.outputs.test_directories }}
       prod_directories: ${{ steps.params.outputs.prod_directories }}
@@ -47,7 +46,8 @@ jobs:
           GITHUB_SHA: ${{ github.sha }}
           GITHUB_REF: ${{ github.ref }}
         run: |
-          echo "[i] Defining parameters"
+          echo "[i] Loading parameters file"
+          source "sources/.github/workflows/params.env"
 
           # Global settings
           echo GITHUB_SHA=${GITHUB_SHA}
@@ -74,9 +74,6 @@ jobs:
           fi
           echo "::set-output name=work_depth::${WORK_DEPTH}"
 
-          # Threads used for loading several jobs in parallel
-          source "sources/.github/workflows/params.env"
-          echo "::set-output name=threads::$TF_THREADS"
 
           # Development working directories
           if [ "$TF_DEV_DIRECTORIES" == "" ]
@@ -108,7 +105,6 @@ jobs:
         run: |
           echo "sha7=${{ steps.params.outputs.sha7 }}"
           echo "work_depth=${{ steps.params.outputs.work_depth }}"
-          echo "threads=${{ steps.params.outputs.threads }}"
           echo "dev_directories=${{ steps.params.outputs.dev_directories }}"
           echo "test_directories=${{ steps.params.outputs.test_directories }}"
           echo "prod_directories=${{ steps.params.outputs.prod_directories }}"
@@ -129,7 +125,7 @@ jobs:
     if: needs.init.outputs.work_depth >= '1'
     environment: development
     strategy:
-      max-parallel: ${{ needs.init.outputs.threads }}
+      max-parallel: 4
       matrix:
         content: ${{ fromJson(needs.init.outputs.dev_directories) }}
     # Restrict the bash operation in the specific directory to format and validate the code
@@ -217,7 +213,7 @@ jobs:
     if: needs.init.outputs.work_depth >= '2'
     environment: testing
     strategy:
-      max-parallel: ${{ fromJson(needs.init.outputs.threads) }}
+      max-parallel: 4
       matrix:
         content: ${{ fromJson(needs.init.outputs.test_directories) }}
     steps:
@@ -233,7 +229,7 @@ jobs:
     if: needs.init.outputs.work_depth >= '3'
     environment: production
     strategy:
-      max-parallel: ${{ needs.init.outputs.threads }}
+      max-parallel: 4
       matrix:
         content: ${{ fromJson(needs.init.outputs.prod_directories) }}
     steps:
