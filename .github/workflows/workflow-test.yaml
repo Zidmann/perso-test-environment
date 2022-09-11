@@ -16,7 +16,6 @@ jobs:
     outputs:
       sha7: ${{ steps.param.outputs.sha7 }}
       threads: ${{ steps.param.outputs.threads }}
-      list: ${{ steps.param.outputs.list }}
       execute_check: ${{ steps.param.outputs.execute_check }}
       execute_test: ${{ steps.param.outputs.execute_test }}
       execute_deploy: ${{ steps.param.outputs.execute_deploy }}
@@ -55,14 +54,11 @@ jobs:
           fi
           echo "::set-output name=sha7::$GITHUB_SHORTSHA"
           echo "::set-output name=threads::8"
-          echo "::set-output name=list::${{ secrets.GLOBAL_LIST }}"
       - name: Show output values
         id: print
         run: |
           echo "sha7=${{ steps.param.outputs.sha7 }}"
           echo "threads=${{ steps.param.outputs.threads }}"
-          echo "list=${{ secrets.GLOBAL_LIST }}"
-          echo "GLOBAL_SECRET=${{ secrets.GLOBAL_SECRET }}"
           echo "execute_check=${{ steps.param.outputs.execute_check }}"
           echo "execute_test=${{ steps.param.outputs.execute_test }}"
           echo "execute_deploy=${{ steps.param.outputs.execute_deploy }}"
@@ -76,14 +72,12 @@ jobs:
     strategy:
       max-parallel: 2
       matrix:
-        content: ${{ fromJson(needs.init.outputs.list) }}
+        content: ${{ fromJson(secrets.WORKING_DIRECTORIES) }}
     steps:
       - name: Simple echo
         id: echo
         run: |
-          echo GLOBAL_SECRET=${{ secrets.GLOBAL_SECRET }}
-          echo LOCAL_SECRET=${{ secrets.LOCAL_SECRET }}
-          echo value=${{ matrix.content }}
+          echo directory=${{ matrix.content }}
 
   test-stagging:
     name: Test on stagging
@@ -94,10 +88,17 @@ jobs:
     steps:
       - name: Simple echo
         id: echo
+        env:
+          SECRET_WORKING_DIRECTORY=${{ secrets.WORKING_DIRECTORY }}
+          SECRET_TESTING_WORKING_DIRECTORY=${{ secrets.TESTING_WORKING_DIRECTORY }}
         run: |
-          echo GLOBAL_SECRET=${{ secrets.GLOBAL_SECRET }}
-          echo LOCAL_SECRET=${{ secrets.LOCAL_SECRET }}
-          echo value=${{ matrix.content }}
+          if [ "$SECRET_TESTING_WORKING_DIRECTORY" != "" ]
+          then
+              WORKING_DIRECTORY=$(echo "$SECRET_TESTING_WORKING_DIRECTORY" | cut -c2-)
+          else
+              WORKING_DIRECTORY=$(echo "$SECRET_WORKING_DIRECTORY" | cut -c2-)
+          fi
+          echo WORKING_DIRECTORY="$WORKING_DIRECTORY"
 
   deploy-production:
     name: Deploy on production
@@ -108,7 +109,15 @@ jobs:
     steps:
       - name: Simple echo
         id: echo
+        env:
+          SECRET_WORKING_DIRECTORY=${{ secrets.WORKING_DIRECTORY }}
+          SECRET_PRODUCTION_WORKING_DIRECTORY=${{ secrets.PRODUCTION_WORKING_DIRECTORY }}
         run: |
-          echo GLOBAL_SECRET=${{ secrets.GLOBAL_SECRET }}
-          echo LOCAL_SECRET=${{ secrets.LOCAL_SECRET }}
-          echo value=${{ matrix.content }}
+          if [ "$SECRET_PRODUCTION_WORKING_DIRECTORY" != "" ]
+          then
+              WORKING_DIRECTORY=$(echo "$SECRET_PRODUCTION_WORKING_DIRECTORY" | cut -c2-)
+          else
+              WORKING_DIRECTORY=$(echo "$SECRET_WORKING_DIRECTORY" | cut -c2-)
+          fi
+          echo WORKING_DIRECTORY="$WORKING_DIRECTORY"
+
