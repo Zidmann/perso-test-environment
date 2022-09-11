@@ -1,3 +1,10 @@
 ["dir1", "dir2", "dir3"]
 
-
+      - name: Store in cache
+        uses: actions/cache@v2
+        with:
+          path: |
+            cache_test/cache_test/**/*.txt
+            cache_test/cache_test/**/*.md
+          key: multiple-files-${{ hashFiles('cache_test/cache_test/**') }}
+          

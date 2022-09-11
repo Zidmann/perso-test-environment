@@ -19,6 +19,9 @@ jobs:
       execute_check: ${{ steps.param.outputs.execute_check }}
       execute_test: ${{ steps.param.outputs.execute_test }}
       execute_deploy: ${{ steps.param.outputs.execute_deploy }}
+      dev_directories: ${{ steps.param.outputs.dev_directories }}
+      test_directories: ${{ steps.param.outputs.test_directories }}
+      prod_directories: ${{ steps.param.outputs.prod_directories }}
     steps:
       - name: Define settings
         id: param
@@ -35,89 +38,107 @@ jobs:
 
           if [ "$GITHUB_BRANCH" == "main" ]
           then
-            echo "::set-output name=execute_check::1"
-            echo "::set-output name=execute_test::1"
-            echo "::set-output name=execute_deploy::1"
+              echo "::set-output name=execute_test::1"
+              echo "::set-output name=execute_deploy::1"
           elif [ "$GITHUB_BRANCH" == "staging" ]
           then
-            echo "::set-output name=execute_check::1"
-            echo "::set-output name=execute_test::1"
-            echo "::set-output name=execute_deploy::0"
+              echo "::set-output name=execute_test::1"
+              echo "::set-output name=execute_deploy::0"
           elif [ "$GITHUB_BRANCH" == "develop" ]
           then
-            echo "::set-output name=execute_check::1"
-            echo "::set-output name=execute_test::0"
-            echo "::set-output name=execute_deploy::0"
+              echo "::set-output name=execute_test::0"
+              echo "::set-output name=execute_deploy::0"
           else
-            echo "[-] Error unaccepted branch name"
-            exit 1
+              echo "[-] Error unaccepted branch name"
+              exit 1
           fi
           echo "::set-output name=sha7::$GITHUB_SHORTSHA"
           echo "::set-output name=threads::8"
+
+          # Development working directories
+          if [ "${{ secrets.DEV_DIRECTORIES }}" == "" ]
+          then
+              echo "::set-output dev_directories=${{ secrets.DEV_DIRECTORIES }}"
+          else
+              echo "::set-output dev_directories=[\".\"]"
+          fi
+
+          # Testing working directories
+          if [ "${{ secrets.TEST_DIRECTORIES }}" == "" ]
+          then
+              echo "::set-output test_directories=${{ secrets.TEST_DIRECTORIES }}"
+          else
+              echo "::set-output test_directories=[\".\"]"
+          fi
+
+          # Production working directories
+          if [ "${{ secrets.PROD_DIRECTORIES }}" == "" ]
+          then
+              echo "::set-output prod_directories=${{ secrets.PROD_DIRECTORIES }}"
+          else
+              echo "::set-output prod_directories=[\".\"]"
+          fi
       - name: Show output values
         id: print
         run: |
           echo "sha7=${{ steps.param.outputs.sha7 }}"
           echo "threads=${{ steps.param.outputs.threads }}"
-          echo "execute_check=${{ steps.param.outputs.execute_check }}"
           echo "execute_test=${{ steps.param.outputs.execute_test }}"
           echo "execute_deploy=${{ steps.param.outputs.execute_deploy }}"
 
-  dev-check:
-    name: Check repertories
+  dev-fmt:
+    name: Format Terraform codes
     needs: [init]
     runs-on: ubuntu-latest
-    if: needs.init.outputs.execute_check == '1'
     environment: development
     strategy:
-      max-parallel: 2
+      max-parallel: 1
       matrix:
-        content: ${{ fromJson(secrets.DEV_WORKING_DIRECTORIES) }}
+        content: ${{ fromJson(needs.init.outputs.dev_directories) }}
     steps:
       - name: Simple echo
         id: echo
         run: |
-          echo directory=${{ matrix.content }}
+          echo 40
 
-  test-stagging:
-    name: Test on stagging
-    needs: [init, dev-check]
+  dev-pull-request:
+    name: Commit changes
+    needs: [dev-fmt]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Simple echo
+        id: echo
+        run: |
+          echo 41
+
+  test-deploy:
+    name: Deploy on staging environment
+    needs: [init, dev-pull-request]
     runs-on: ubuntu-latest
     if: needs.init.outputs.execute_test == '1'
     environment: testing
+    strategy:
+      max-parallel: 1
+      matrix:
+        content: ${{ fromJson(needs.init.outputs.test_directories) }}
     steps:
       - name: Simple echo
         id: echo
-        env:
-          SECRET_WORKING_DIRECTORY=${{ secrets.WORKING_DIRECTORY }}
-          SECRET_TESTING_WORKING_DIRECTORY=${{ secrets.TESTING_WORKING_DIRECTORY }}
         run: |
-          if [ "$SECRET_TESTING_WORKING_DIRECTORY" != "" ]
-          then
-              WORKING_DIRECTORY=$(echo "$SECRET_TESTING_WORKING_DIRECTORY" | cut -c2-)
-          else
-              WORKING_DIRECTORY=$(echo "$SECRET_WORKING_DIRECTORY" | cut -c2-)
-          fi
-          echo WORKING_DIRECTORY="$WORKING_DIRECTORY"
+          echo 42
 
-  deploy-production:
+  prod-deploy:
     name: Deploy on production
-    needs: [init, test-stagging]
+    needs: [init, dev-pull-request]
     runs-on: ubuntu-latest
     if: needs.init.outputs.execute_deploy == '1'
     environment: production
+    strategy:
+      max-parallel: 1
+      matrix:
+        content: ${{ fromJson(needs.init.outputs.prod_directories) }}
     steps:
       - name: Simple echo
         id: echo
-        env:
-          SECRET_WORKING_DIRECTORY=${{ secrets.WORKING_DIRECTORY }}
-          SECRET_PRODUCTION_WORKING_DIRECTORY=${{ secrets.PRODUCTION_WORKING_DIRECTORY }}
         run: |
-          if [ "$SECRET_PRODUCTION_WORKING_DIRECTORY" != "" ]
-          then
-              WORKING_DIRECTORY=$(echo "$SECRET_PRODUCTION_WORKING_DIRECTORY" | cut -c2-)
-          else
-              WORKING_DIRECTORY=$(echo "$SECRET_WORKING_DIRECTORY" | cut -c2-)
-          fi
-          echo WORKING_DIRECTORY="$WORKING_DIRECTORY"
-
+          echo 43
