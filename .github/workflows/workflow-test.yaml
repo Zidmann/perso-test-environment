@@ -30,7 +30,7 @@ jobs:
           submodules: true
 
       - name: Define settings
-        id: settings
+        id: params
         env:
           GITHUB_SHA: ${{ github.sha }}
           GITHUB_REF: ${{ github.ref }}
