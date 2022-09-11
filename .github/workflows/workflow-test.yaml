@@ -56,7 +56,7 @@ jobs:
           # Development working directories
           if [ "$DEV_DIRECTORIES" != "" ]
           then
-              DEV_DIRECTORIES=$(echo "$DEV_DIRECTORIES" | cut -c2)
+              DEV_DIRECTORIES=$(echo "$DEV_DIRECTORIES" | cut -c2-)
               echo "::set-output name=dev_directories::$DEV_DIRECTORIES"
           else
               echo "::set-output name=dev_directories::[\".\"]"
