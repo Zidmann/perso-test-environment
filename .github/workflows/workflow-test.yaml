@@ -16,9 +16,7 @@ jobs:
     outputs:
       sha7: ${{ steps.param.outputs.sha7 }}
       threads: ${{ steps.param.outputs.threads }}
-      execute_check: ${{ steps.param.outputs.execute_check }}
-      execute_test: ${{ steps.param.outputs.execute_test }}
-      execute_deploy: ${{ steps.param.outputs.execute_deploy }}
+      last_step: ${{ steps.param.outputs.last_step }}
       dev_directories: ${{ steps.param.outputs.dev_directories }}
       test_directories: ${{ steps.param.outputs.test_directories }}
       prod_directories: ${{ steps.param.outputs.prod_directories }}
@@ -41,22 +39,19 @@ jobs:
 
           if [ "$GITHUB_BRANCH" == "main" ]
           then
-              echo "::set-output name=execute_test::1"
-              echo "::set-output name=execute_deploy::1"
+              echo "::set-output name=last_step::3"
           elif [ "$GITHUB_BRANCH" == "staging" ]
           then
-              echo "::set-output name=execute_test::1"
-              echo "::set-output name=execute_deploy::0"
+              echo "::set-output name=last_step::2"
           elif [ "$GITHUB_BRANCH" == "develop" ]
           then
-              echo "::set-output name=execute_test::0"
-              echo "::set-output name=execute_deploy::0"
+              echo "::set-output name=last_step::1"
           else
               echo "[-] Error unaccepted branch name"
               exit 1
           fi
           echo "::set-output name=sha7::$GITHUB_SHORTSHA"
-          echo "::set-output name=threads::8"
+          echo "::set-output name=threads::4"
 
           # Development working directories
           if [ "$DEV_DIRECTORIES" != "" ]
@@ -93,9 +88,10 @@ jobs:
           echo "prod_directories=${{ steps.param.outputs.prod_directories }}"
 
   dev-fmt:
-    name: Format Terraform codes
+    name: Format codes
     needs: [init]
     runs-on: ubuntu-latest
+    if: needs.init.outputs.last_step >= '1'
     environment: development
     strategy:
       max-parallel: 1
@@ -111,6 +107,7 @@ jobs:
     name: Commit changes
     needs: [dev-fmt]
     runs-on: ubuntu-latest
+    if: needs.init.outputs.last_step >= '1'
     steps:
       - name: Simple echo
         id: echo
@@ -121,7 +118,7 @@ jobs:
     name: Deploy on staging environment
     needs: [init, dev-pull-request]
     runs-on: ubuntu-latest
-    if: needs.init.outputs.execute_test == '1'
+    if: needs.init.outputs.last_step >= '2'
     environment: testing
     strategy:
       max-parallel: 1
@@ -137,7 +134,7 @@ jobs:
     name: Deploy on production
     needs: [init, test-deploy]
     runs-on: ubuntu-latest
-    if: needs.init.outputs.execute_deploy == '1'
+    if: needs.init.outputs.last_step >= '3'
     environment: production
     strategy:
       max-parallel: 1
