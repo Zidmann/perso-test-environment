@@ -85,6 +85,9 @@ jobs:
           echo "threads=${{ steps.param.outputs.threads }}"
           echo "execute_test=${{ steps.param.outputs.execute_test }}"
           echo "execute_deploy=${{ steps.param.outputs.execute_deploy }}"
+          echo "dev_directories=${{ steps.param.outputs.dev_directories }}"
+          echo "test_directories=${{ steps.param.outputs.test_directories }}"
+          echo "prod_directories=${{ steps.param.outputs.prod_directories }}"
 
   dev-fmt:
     name: Format Terraform codes
