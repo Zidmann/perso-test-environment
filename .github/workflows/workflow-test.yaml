@@ -85,7 +85,7 @@ jobs:
           echo "::set-output name=prod_directories::$TF_PROD_DIRECTORIES"
 
           # Define cache key
-          echo "::set-output name=cache_key::terraform-${{ steps.settings.outputs.sha7 }}-$(/bin/date -u "+%Y%m%d-%H%M%S")"
+          echo "::set-output name=cache_key::terraform-$GITHUB_SHORTSHA-$(/bin/date -u "+%Y%m%d-%H%M%S")"
       - name: Show output values
         id: print
         run: |
