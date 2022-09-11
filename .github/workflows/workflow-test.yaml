@@ -127,6 +127,7 @@ jobs:
         id: echo
         run: |
           echo 40
+          ls sources/
 
   dev-pull-request:
     name: Commit changes
