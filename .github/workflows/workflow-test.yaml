@@ -217,7 +217,7 @@ jobs:
     if: needs.init.outputs.work_depth >= '2'
     environment: testing
     strategy:
-      max-parallel: ${{ needs.init.outputs.threads }}
+      max-parallel: ${{ fromJson(needs.init.outputs.threads) }}
       matrix:
         content: ${{ fromJson(needs.init.outputs.test_directories) }}
     steps:
