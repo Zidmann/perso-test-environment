@@ -28,6 +28,9 @@ jobs:
         env:
           GITHUB_REF: ${{ github.ref }} 
           GITHUB_SHA: ${{ github.sha }}
+          DEV_DIRECTORIES: ${{ secrets.DEV_DIRECTORIES }}
+          TEST_DIRECTORIES: ${{ secrets.TEST_DIRECTORIES }}
+          PROD_DIRECTORIES: ${{ secrets.PROD_DIRECTORIES }}
         run: |
           GITHUB_SHORTSHA=${GITHUB_SHA:0:7}
           GITHUB_BRANCH=${GITHUB_REF##*/}
@@ -56,25 +59,25 @@ jobs:
           echo "::set-output name=threads::8"
 
           # Development working directories
-          if [ "${{ secrets.DEV_DIRECTORIES }}" != "" ]
+          if [ "$DEV_DIRECTORIES" != "" ]
           then
-              echo "::set-output dev_directories=${{ secrets.DEV_DIRECTORIES }}"
+              echo "::set-output dev_directories=$DEV_DIRECTORIES"
           else
               echo "::set-output dev_directories=[\".\"]"
           fi
 
           # Testing working directories
-          if [ "${{ secrets.TEST_DIRECTORIES }}" != "" ]
+          if [ "$TEST_DIRECTORIES" != "" ]
           then
-              echo "::set-output test_directories=${{ secrets.TEST_DIRECTORIES }}"
+              echo "::set-output test_directories=$TEST_DIRECTORIES"
           else
               echo "::set-output test_directories=[\".\"]"
           fi
 
           # Production working directories
-          if [ "${{ secrets.PROD_DIRECTORIES }}" != "" ]
+          if [ "$PROD_DIRECTORIES" != "" ]
           then
-              echo "::set-output prod_directories=${{ secrets.PROD_DIRECTORIES }}"
+              echo "::set-output prod_directories=$PROD_DIRECTORIES"
           else
               echo "::set-output prod_directories=[\".\"]"
           fi
