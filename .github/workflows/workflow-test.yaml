@@ -22,6 +22,17 @@ jobs:
       prod_directories: ${{ steps.params.outputs.prod_directories }}
       cache_key: ${{ steps.params.outputs.cache_key }}
     steps:
+      # Define an SSH key to access private repositories if necessary
+      - name: Start SSH agent
+        id: ssh
+        if: env.SSH_PRIVATE_KEY
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+        uses: webfactory/ssh-agent@v0.5.4
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+      # Get the sources to get the parameters and prepare caching
       - name: Checkout
         id: checkout
         uses: actions/checkout@v2
@@ -29,6 +40,7 @@ jobs:
           path: sources/
           submodules: true
 
+      # Definition of all the variables which will be used for the differents jobs
       - name: Define parameters
         id: params
         env:
@@ -89,6 +101,8 @@ jobs:
 
           # Define cache key
           echo "::set-output name=cache_key::terraform-$GITHUB_SHORTSHA-$(/bin/date -u "+%Y%m%d-%H%M%S")"
+
+      # Print all the variables used in the next jobs
       - name: Show output values
         id: print
         run: |
@@ -99,6 +113,8 @@ jobs:
           echo "test_directories=${{ steps.params.outputs.test_directories }}"
           echo "prod_directories=${{ steps.params.outputs.prod_directories }}"
           echo "cache_key=${{ steps.params.outputs.cache_key }}"
+
+      # Push the source in the cache
       - name: Upload cache
         id: cache
         uses: actions/cache@v3
@@ -113,21 +129,75 @@ jobs:
     if: needs.init.outputs.work_depth >= '1'
     environment: development
     strategy:
-      max-parallel: 1
+      max-parallel: ${{ needs.init.outputs.threads }}
       matrix:
         content: ${{ fromJson(needs.init.outputs.dev_directories) }}
+    # Restrict the bash operation in the specific directory to format and validate the code
+    defaults:
+      run:
+        shell: bash
+        working-directory: sources/${{ matrix.directory }}
     steps:
+      # Define an SSH key to access private repositories if necessary
+      - name: Start SSH agent
+        id: ssh
+        if: env.SSH_PRIVATE_KEY
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+        uses: webfactory/ssh-agent@v0.5.4
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+      # Get the sources previously added in the cache
       - name: Download cache
         id: cache
         uses: actions/cache@v3
         with:
           path: sources/
           key: ${{ needs.init.outputs.cache_key }}
-      - name: Simple echo
-        id: echo
+
+      # Install the latest version of Terraform
+      - name: Setup Terraform
+        id: setup
+        uses: hashicorp/setup-terraform@v1
+
+      # Move the backend file to not be seen during the terraform initialization
+      - name: Disable the backend file
+        id: disable-backend
         run: |
-          echo 40
-          ls sources/
+          if [ -f "backend.tf" ]
+          then
+            mv backend.tf backend._tf
+          fi
+
+      # Initialize a new Terraform working directory by downloading modules
+      - name: Terraform init
+        id: init
+        run: terraform init
+
+      # Validate the configuration files
+      - name: Terraform validate
+        id: validate
+        run: terraform validate -no-color
+
+      # Check that all Terraform configuration files are cleaned
+      - name: Terraform format
+        id: format
+        run: terraform fmt -recursive -no-color
+
+      # Restore the backend file in its previous path to be catched in the pull request
+      - name: Disable the backend file
+        id: enable-backend
+        run: |
+          if [ -f "backend._tf" ]
+          then
+            mv backend._tf backend.tf
+          fi
+
+      # Clean up the loaded .terraform directory which could be catched in the pull request
+      - name: Remove Terraform working space and the credentials
+        id: clean
+        run: rm -vrf .terraform/
 
   dev-pull-request:
     name: Commit changes
@@ -147,7 +217,7 @@ jobs:
     if: needs.init.outputs.work_depth >= '2'
     environment: testing
     strategy:
-      max-parallel: 1
+      max-parallel: ${{ needs.init.outputs.threads }}
       matrix:
         content: ${{ fromJson(needs.init.outputs.test_directories) }}
     steps:
@@ -163,7 +233,7 @@ jobs:
     if: needs.init.outputs.work_depth >= '3'
     environment: production
     strategy:
-      max-parallel: 1
+      max-parallel: ${{ needs.init.outputs.threads }}
       matrix:
         content: ${{ fromJson(needs.init.outputs.prod_directories) }}
     steps:
