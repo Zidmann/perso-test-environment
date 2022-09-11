@@ -20,16 +20,24 @@ jobs:
       dev_directories: ${{ steps.params.outputs.dev_directories }}
       test_directories: ${{ steps.params.outputs.test_directories }}
       prod_directories: ${{ steps.params.outputs.prod_directories }}
+      cache_key: ${{ steps.params.outputs.cache_key }}
     steps:
+      - name: Checkout
+        id: checkout
+        uses: actions/checkout@v2
+        with:
+          path: sources/
+          submodules: true
+
       - name: Define settings
         id: settings
         env:
           GITHUB_SHA: ${{ github.sha }}
           GITHUB_REF: ${{ github.ref }}
         run: |
-          echo GITHUB_SHA=$GITHUB_SHA
+          echo GITHUB_SHA=${GITHUB_SHA}
           GITHUB_SHORTSHA=${GITHUB_SHA:0:7}
-          echo GITHUB_SHORTSHA=$GITHUB_SHORTSHA
+          echo GITHUB_SHORTSHA=${GITHUB_SHORTSHA}
 
           echo GITHUB_REF=$GITHUB_REF
           GITHUB_BRANCH=${GITHUB_REF##*/}
@@ -51,16 +59,7 @@ jobs:
           fi
           echo "::set-output name=work_depth::${WORK_DEPTH}"
 
-      - name: Checkout
-        id: checkout
-        uses: actions/checkout@v2
-        with:
-          path: sources/
-          submodules: true
-
-      - name: Load params
-        id: params
-        run: |
+          # Threads used for loading several jobs in parallel
           source "sources/.github/workflows/params.env"
           echo "::set-output name=threads::$TF_THREADS"
 
@@ -84,6 +83,9 @@ jobs:
               TF_PROD_DIRECTORIES="[\".\"]"
           fi
           echo "::set-output name=prod_directories::$TF_PROD_DIRECTORIES"
+
+          # Define cache key
+          echo "::set-output name=cache_key::terraform-${{ steps.settings.outputs.sha7 }}-$(/bin/date -u "+%Y%m%d-%H%M%S")"
       - name: Show output values
         id: print
         run: |
@@ -93,9 +95,15 @@ jobs:
           echo "dev_directories=${{ steps.params.outputs.dev_directories }}"
           echo "test_directories=${{ steps.params.outputs.test_directories }}"
           echo "prod_directories=${{ steps.params.outputs.prod_directories }}"
+      - name: Upload cache
+        id: cache
+        uses: actions/cache@v3
+        with:
+          path: sources/
+          key: ${{ steps.params.outputs.cache_key }}
 
-  dev-fmt:
-    name: Format codes
+  dev-check:
+    name: Check codes
     needs: [init]
     runs-on: ubuntu-latest
     if: needs.init.outputs.work_depth >= '1'
@@ -112,7 +120,7 @@ jobs:
 
   dev-pull-request:
     name: Commit changes
-    needs: [dev-fmt]
+    needs: [dev-check]
     runs-on: ubuntu-latest
     if: needs.init.outputs.work_depth >= '1'
     steps:
