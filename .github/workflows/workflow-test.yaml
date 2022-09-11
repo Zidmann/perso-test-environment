@@ -14,9 +14,12 @@ jobs:
     name: Initialization
     runs-on: ubuntu-latest
     outputs:
-      sha7: ${{ steps.param.outputs.sha7 }}
-      threads: ${{ steps.param.outputs.threads }}
-      work_depth: ${{ steps.param.outputs.work_depth }}
+      sha7: ${{ steps.settings.outputs.sha7 }}
+      work_depth: ${{ steps.settings.outputs.work_depth }}
+      threads: ${{ steps.params.outputs.threads }}
+      dev_directories: ${{ steps.params.outputs.dev_directories }}
+      test_directories: ${{ steps.params.outputs.test_directories }}
+      prod_directories: ${{ steps.params.outputs.prod_directories }}
     steps:
       - name: Define settings
         id: settings
@@ -86,7 +89,7 @@ jobs:
         run: |
           echo "sha7=${{ steps.settings.outputs.sha7 }}"
           echo "work_depth=${{ steps.settings.outputs.work_depth }}"
-          echo "threads=${{ steps.settings.outputs.threads }}"
+          echo "threads=${{ steps.params.outputs.threads }}"
           echo "dev_directories=${{ steps.params.outputs.dev_directories }}"
           echo "test_directories=${{ steps.params.outputs.test_directories }}"
           echo "prod_directories=${{ steps.params.outputs.prod_directories }}"
