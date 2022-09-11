@@ -58,7 +58,7 @@ jobs:
       - name: Load params
         id: params
         run: |
-          source sources/.github/workflows/params.env
+          source "sources/.github/workflows/params.env"
           echo "::set-output name=threads::$TF_THREADS"
 
           # Development working directories
