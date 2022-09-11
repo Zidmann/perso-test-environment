@@ -56,7 +56,7 @@ jobs:
           echo "::set-output name=threads::8"
 
           # Development working directories
-          if [ "${{ secrets.DEV_DIRECTORIES }}" == "" ]
+          if [ "${{ secrets.DEV_DIRECTORIES }}" != "" ]
           then
               echo "::set-output dev_directories=${{ secrets.DEV_DIRECTORIES }}"
           else
@@ -64,7 +64,7 @@ jobs:
           fi
 
           # Testing working directories
-          if [ "${{ secrets.TEST_DIRECTORIES }}" == "" ]
+          if [ "${{ secrets.TEST_DIRECTORIES }}" != "" ]
           then
               echo "::set-output test_directories=${{ secrets.TEST_DIRECTORIES }}"
           else
@@ -72,7 +72,7 @@ jobs:
           fi
 
           # Production working directories
-          if [ "${{ secrets.PROD_DIRECTORIES }}" == "" ]
+          if [ "${{ secrets.PROD_DIRECTORIES }}" != "" ]
           then
               echo "::set-output prod_directories=${{ secrets.PROD_DIRECTORIES }}"
           else
@@ -132,7 +132,7 @@ jobs:
 
   prod-deploy:
     name: Deploy on production
-    needs: [init, dev-pull-request]
+    needs: [init, test-deploy]
     runs-on: ubuntu-latest
     if: needs.init.outputs.execute_deploy == '1'
     environment: production
